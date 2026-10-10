@@ -5,6 +5,7 @@
   "installCommand": "npm ci",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/healthz", "destination": "/api" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
