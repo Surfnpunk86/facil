@@ -13,6 +13,7 @@ export default function Home({ notFound = false }) {
       <div className="stack">
         <a className="btn dark" href="/caja">Entrar a la caja</a>
         <a className="btn ghost" href="/panel">Entrar al panel del restaurante</a>
+        <a className="btn ghost" href="/registro">Crear cuenta de restaurante</a>
       </div>
     </main>
   );

@@ -13,6 +13,7 @@ import publicRoutes from './routes/public.js';
 import staffRoutes from './routes/staff.js';
 import panelRoutes from './routes/panel.js';
 import cronRoutes from './routes/cron.js';
+import accountRoutes from './routes/account.js';
 
 const app = express();
 app.set('trust proxy', 1); // Vercel (y Render) están detrás de un proxy
@@ -49,6 +50,7 @@ app.use('/api/r', publicLimiter);
 app.use('/api/c', publicLimiter);
 app.use('/api/auth', loginLimiter);
 
+app.use('/api', accountRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', staffRoutes);
 app.use('/api', panelRoutes);

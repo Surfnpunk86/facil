@@ -10,7 +10,7 @@ const TABS = [['resumen', 'Resumen'], ['opiniones', 'Opiniones'], ['piezas', 'Pi
 export default function Panel() {
   const [session, setSession] = useState(getStaffSession());
   const logout = () => { setStaffSession(null); setSession(null); };
-  if (!session) return <Login title="Panel del restaurante" onLogin={setSession} />;
+  if (!session) return <Login title="Panel del restaurante" onLogin={setSession} allowSignup />;
   if (session.staff.role !== 'OWNER') {
     return (
       <main className="mobile"><Mark /><h1>Este usuario es de caja</h1><p className="muted">El panel es solo para el administrador del restaurante.</p>

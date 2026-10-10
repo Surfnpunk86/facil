@@ -8,6 +8,14 @@ export const config = {
   jwtSecret: env.JWT_SECRET || 'dev-only-secret-change-me',
   tz: 'America/Bogota',
   consentVersion: env.CONSENT_VERSION || '2026-09',
+  // Permite que cualquier restaurante cree su cuenta desde /registro. Poner ALLOW_SIGNUP=false para cerrarlo.
+  allowSignup: env.ALLOW_SIGNUP !== 'false',
+
+  // Correo para restablecer contraseñas (Resend). Sin RESEND_API_KEY el enlace queda en el log del servidor.
+  mail: {
+    apiKey: env.RESEND_API_KEY || '',
+    from: env.MAIL_FROM || 'Fácil <onboarding@resend.dev>'
+  },
 
   whatsapp: {
     token: env.WA_TOKEN || '',

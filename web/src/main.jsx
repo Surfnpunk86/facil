@@ -9,6 +9,9 @@ const Entry = lazy(() => import('./pages/Entry.jsx'));
 const Card = lazy(() => import('./pages/Card.jsx'));
 const Caja = lazy(() => import('./pages/Caja.jsx'));
 const Panel = lazy(() => import('./pages/Panel.jsx'));
+const Register = lazy(() => import('./pages/Register.jsx'));
+const Forgot = lazy(() => import('./pages/Forgot.jsx'));
+const Reset = lazy(() => import('./pages/Reset.jsx'));
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -20,6 +23,9 @@ createRoot(document.getElementById('root')).render(
           <Route path="/c/:token" element={<Card />} />
           <Route path="/caja" element={<Caja />} />
           <Route path="/panel" element={<Panel />} />
+          <Route path="/registro" element={<Register />} />
+          <Route path="/olvide" element={<Forgot />} />
+          <Route path="/restablecer" element={<Reset />} />
           <Route path="*" element={<Home notFound />} />
         </Routes>
       </Suspense>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api, setStaffSession } from './api.js';
 import { Mark } from './components.jsx';
 
-export default function Login({ title, onLogin }) {
+export default function Login({ title, onLogin, allowSignup = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -38,7 +38,16 @@ export default function Login({ title, onLogin }) {
         </div>
         {error && <div className="error" role="alert">{error}</div>}
         <button className="btn" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
+        <p style={{ textAlign: 'center', margin: 0 }}>
+          <a className="muted" href="/olvide">¿Olvidaste tu contraseña?</a>
+        </p>
       </form>
+      {allowSignup && (
+        <div className="stack">
+          <p className="muted" style={{ textAlign: 'center', margin: 0 }}>¿Tu restaurante aún no está en Fácil?</p>
+          <a className="btn ghost" href="/registro">Crear cuenta</a>
+        </div>
+      )}
     </main>
   );
 }
