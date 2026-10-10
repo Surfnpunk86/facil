@@ -90,6 +90,32 @@ async function main() {
     ]
   });
 
+  // Red de demostración: una zona del álbum con un segundo local, un mesero, retos y un sorteo en borrador.
+  const now2 = new Date();
+  const zone = await prisma.zone.create({
+    data: {
+      slug: 'ruta-del-prado', name: 'Ruta del Prado', city: 'Barranquilla', rewardText: 'Cena para 2 en un restaurante de la ruta',
+      seasonStart: new Date(now2.getTime() - 30 * DAY), seasonEnd: new Date(now2.getTime() + 90 * DAY)
+    }
+  });
+  await prisma.restaurant.update({ where: { id: r.id }, data: { zoneId: zone.id } });
+  await prisma.restaurant.create({
+    data: { slug: 'cafe-del-prado', name: 'Café del Prado', nit: '901765432', city: 'Barranquilla', rewardText: 'Café y pastel de la casa', zoneId: zone.id }
+  });
+  await prisma.waiter.create({ data: { restaurantId: r.id, name: 'Luis Pérez', code: 'LUIS' } });
+  await prisma.challenge.createMany({
+    data: [
+      { restaurantId: r.id, title: 'Tres almuerzos este mes', kind: 'VISITS', target: 3, bonusPoints: 150, startsAt: new Date(now2.getTime() - 5 * DAY), endsAt: new Date(now2.getTime() + 25 * DAY) },
+      { zoneId: zone.id, title: 'Recorre la Ruta del Prado', kind: 'VISITS', target: 2, bonusPoints: 300, sponsorName: 'Marca aliada', startsAt: new Date(now2.getTime() - 5 * DAY), endsAt: new Date(now2.getTime() + 25 * DAY) }
+    ]
+  });
+  await prisma.draw.create({
+    data: {
+      name: 'Factura premiada (borrador)', prizeText: 'Premio del patrocinador', zoneId: zone.id,
+      startsAt: now2, endsAt: new Date(now2.getTime() + 30 * DAY), drawAt: new Date(now2.getTime() + 35 * DAY)
+    }
+  });
+
   console.log('Demo lista: /r/arepa-y-brasa · admin@facil.demo / ' + ownerPass + ' · caja@facil.demo / ' + cashierPass);
 }
 

@@ -46,7 +46,7 @@ async function profile(customer, restaurant) {
       bday !== null && bday <= 30 ? (bday === 0 ? 'Cumple hoy' : `Cumple en ${bday} días`) : null
     ].filter(Boolean),
     suggestion: suggestionFor(customer, restaurant),
-    rewards: rewards.map((x) => ({ id: x.id, description: x.description, expiresAt: x.expiresAt }))
+    rewards: rewards.map((x) => ({ id: x.id, kind: x.kind, description: x.description, expiresAt: x.expiresAt }))
   };
 }
 
@@ -105,6 +105,7 @@ r.post('/staff/purchases', async (req, res) => {
     newCustomer: created,
     pointsAwarded: result.pointsAwarded,
     rewardUnlocked: result.rewardUnlocked ? { description: result.rewardUnlocked.description } : null,
+    extras: result.extras,
     customer: await profile(result.customer, rest)
   });
 });

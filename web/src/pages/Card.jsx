@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { api, saveCard, cop } from '../api.js';
 import Scanner from '../Scanner.jsx';
-import { Mark, Pass, Stars, CheckIcon, useToast } from '../components.jsx';
+import { Screen, Pass, Stars, CheckIcon, useToast } from '../components.jsx';
+import { StreakBlock, ChallengesBlock, AlbumBlock, DrawsBlock, ExtrasList } from '../Games.jsx';
 
 const VIA = { nfc: 'NFC', qr: 'QR', wa: 'WHATSAPP', wallet: 'WALLET' };
 
@@ -64,26 +65,26 @@ export default function Card() {
   }
 
   if (!card) {
-    return <main className="mobile"><Mark />{error ? <div className="error">{error}</div> : <p className="muted">Cargando tu tarjeta…</p>}</main>;
+    return <Screen>{error ? <div className="error">{error}</div> : <p className="muted">Cargando tu tarjeta…</p>}</Screen>;
   }
   const r = card.restaurant;
 
   if (view === 'scan') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <button className="link" onClick={() => setView('home')}>← Volver</button>
         <h2>Escanea el QR de tu factura</h2>
         <p className="muted">Apunta al código de la factura electrónica o del tiquete POS. Leemos el total y confirmamos que sea de {r.name}.</p>
-        <Scanner onScan={(text) => claim('invoice', { qr: text, door })} onError={(m) => { setError(m); setView('home'); }} />
+        <Scanner kind="invoice" onScan={(text) => claim('invoice', { qr: text, door })} onError={(m) => { setError(m); setView('home'); }} />
         {busy && <p className="muted center">Validando tu compra…</p>}
         <p className="muted small">¿Tu factura no tiene código QR? Pide en caja que confirmen tu compra con tu número de celular.</p>
-      </main>
+      </Screen>
     );
   }
 
   if (view === 'code') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <button className="link" onClick={() => setView('home')}>← Volver</button>
         <h2>Código de tu domicilio</h2>
         <p className="muted">Está en el sticker del empaque o en la factura de tu pedido.</p>
@@ -94,18 +95,19 @@ export default function Card() {
           </div>
           <button className="btn" disabled={busy || code.length < 4}>{busy ? 'Validando…' : 'Sumar puntos'}</button>
         </form>
-      </main>
+      </Screen>
     );
   }
 
   if (view === 'done' && result) {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <div className="success">
           <div className="ring"><CheckIcon /></div>
           <h1>¡Compra validada!</h1>
           <p className="muted">+{result.pointsAwarded} puntos y un sello nuevo</p>
         </div>
+        <ExtrasList extras={result.extras} />
         {result.rewardUnlocked && (
           <div className="reward"><b>Completaste tu tarjeta.</b> Ganaste: {result.rewardUnlocked.description}. Muéstrala en caja para reclamarlo.</div>
         )}
@@ -118,13 +120,13 @@ export default function Card() {
         <button className="btn dark" onClick={() => setView('rate')}>Cuéntanos cómo te fue</button>
         <button className="link" onClick={() => setView('home')}>Volver a mi tarjeta</button>
         {toastNode}
-      </main>
+      </Screen>
     );
   }
 
   if (view === 'rate') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <h1>¿Cómo te fue hoy en {r.name}?</h1>
         <Stars value={rating} onChange={setRating} />
         {rating > 0 && rating <= 3 && (
@@ -136,36 +138,35 @@ export default function Card() {
         <button className="btn" disabled={!rating || busy} onClick={sendRating}>Enviar</button>
         <button className="link" onClick={() => setView('home')}>Ahora no</button>
         {toastNode}
-      </main>
+      </Screen>
     );
   }
 
   if (view === 'thanks') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <h1>¡Gracias por contarnos!</h1>
         <p className="muted">
           {rating >= 4 ? 'Si quieres, cuéntalo también en Google: les ayuda a otros a encontrarnos.' : 'Tu comentario ya le llegó al administrador. También puedes dejar tu opinión en Google.'}
         </p>
         {result?.googleReviewUrl && <a className={`btn ${rating >= 4 ? '' : 'ghost'}`} href={result.googleReviewUrl} target="_blank" rel="noreferrer">Dejar mi reseña en Google</a>}
         <button className="link" onClick={() => setView('home')}>Volver a mi tarjeta</button>
-      </main>
+      </Screen>
     );
   }
 
   if (view === 'optout') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Tu tarjeta del Club">
         <h1>Listo, no te enviaremos más promociones</h1>
         <p className="muted">Tu tarjeta y tus puntos siguen activos. Puedes volver a activar los mensajes aceptando la autorización en tu tarjeta.</p>
         <button className="link" onClick={() => setView('home')}>Volver a mi tarjeta</button>
-      </main>
+      </Screen>
     );
   }
 
   return (
-    <main className="mobile">
-      <div className="row between"><Mark /><span className="muted small">Club {r.name}</span></div>
+    <Screen title={r.name} subtitle="Tu tarjeta del Club">
       {params.get('nuevo') && <div className="note"><b>¡Bienvenido al Club!</b> Tu tarjeta quedó lista. Suma la compra de hoy escaneando el QR de tu factura cuando pagues.</div>}
       {card.needsConsent && (
         <div className="panel">
@@ -180,17 +181,25 @@ export default function Card() {
       <Pass card={card} />
       {card.rewards.map((rw) => (
         <div className="reward" key={rw.id}>
-          <b>{rw.kind === 'BIRTHDAY' ? 'Regalo de cumpleaños' : 'Premio listo'}:</b> {rw.description}.
+          <b>{rw.kind === 'BIRTHDAY' ? 'Regalo de cumpleaños' : rw.kind === 'ALBUM' ? 'Premio del álbum' : 'Premio listo'}:</b> {rw.description}.
           {rw.expiresAt && <> Válido hasta el {new Date(rw.expiresAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.</>} Muestra esta tarjeta en caja.
         </div>
       ))}
       {error && <div className="error" role="alert">{error}</div>}
       <button className="btn" onClick={() => { setError(null); setView('scan'); }}>Escanear mi factura</button>
       <button className="btn ghost" onClick={() => { setError(null); setView('code'); }}>Tengo un código de domicilio</button>
+      {card.games && (
+        <>
+          <DrawsBlock draws={card.games.draws} />
+          <StreakBlock streak={card.games.streak} />
+          <ChallengesBlock challenges={card.games.challenges} />
+          <AlbumBlock album={card.games.album} />
+        </>
+      )}
       {card.googleWalletUrl && <a className="btn dark" href={card.googleWalletUrl} target="_blank" rel="noreferrer">Guardar en Google Wallet</a>}
       <p className="muted small">¿Estás en caja? Muestra el código de tu tarjeta o di tu número y el cajero suma tu compra. Guarda esta página en tu pantalla de inicio para tenerla a mano.</p>
       <button className="link small" onClick={optOut}>No quiero recibir promociones</button>
       {toastNode}
-    </main>
+    </Screen>
   );
 }

@@ -14,6 +14,7 @@ import staffRoutes from './routes/staff.js';
 import panelRoutes from './routes/panel.js';
 import cronRoutes from './routes/cron.js';
 import accountRoutes from './routes/account.js';
+import gamesRoutes from './routes/games.js';
 
 const app = express();
 app.set('trust proxy', 1); // Vercel (y Render) están detrás de un proxy
@@ -53,6 +54,7 @@ app.use('/api/auth', loginLimiter);
 app.use('/api', accountRoutes);
 app.use('/api', publicRoutes);
 app.use('/api', staffRoutes);
+app.use('/api', gamesRoutes);
 app.use('/api', panelRoutes);
 // Cron de automatizaciones: en Vercel lo dispara "crons" en vercel.json; en Render lo llamaba un Cron Job aparte.
 app.use('/api', cronRoutes);

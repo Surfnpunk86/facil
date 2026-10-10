@@ -20,6 +20,36 @@ Reglas de negocio implementadas:
 - Reseñas: todos reciben el enlace de Google; la calificación de 1 a 3 estrellas además alerta al administrador por WhatsApp. No se filtra quién llega a Google, por política de Google.
 - Datos personales: el registro exige la autorización de la Ley 1581 de 2012. Los clientes inscritos desde caja reciben su tarjeta por WhatsApp y aceptan la autorización al abrirla; hasta entonces no reciben mensajes promocionales. Responder "BAJA" por WhatsApp o usar el enlace de la tarjeta desactiva las promociones.
 
+## Red de beneficios y juegos (fase 1.5)
+
+Sobre cada compra validada, Fácil suma además de puntos y sello:
+
+| Mecánica | Cómo funciona | Quién la configura |
+| --- | --- | --- |
+| Racha semanal | Semanas seguidas con al menos una compra en cualquier restaurante de la red (el cliente se reconoce por su celular). | Automática |
+| Retos | Visitas, gasto acumulado o semanas seguidas dentro de un periodo; al cumplirse suman puntos extra una sola vez por cliente. | El restaurante en el panel (pestaña **Juegos y red**) o la red para una zona, con patrocinador opcional (`scripts/red.js reto`) |
+| Álbum por zona | Cada restaurante de la zona es una lámina que se gana con una compra validada en la temporada. Al completar la página se crea el premio en el restaurante donde se completó y se canjea en caja. La lámina es fija por restaurante: es un logro, no azar. | La red (`scripts/red.js zona` y `asignar`) |
+| Factura premiada | Cada compra validada durante un sorteo activo genera una boleta numerada. Un sorteo **solo se puede activar con el número de autorización de Coljuegos**; sin él no emite boletas. | La red (`scripts/red.js sorteo`, `activar`, `cerrar`, `exportar`, `sortear`) |
+| Ranking de meseros | Cada mesero tiene un código y un QR propio (`/r/<slug>?via=qr&m=CODIGO`); los clientes que inscribe quedan a su nombre y el ranking mide inscritos y cuántos vuelven. | El restaurante en el panel |
+
+Comandos de la red (en local o en tu computador con DATABASE_URL apuntando a la base; el detalle está en el encabezado de `scripts/red.js`):
+
+```bash
+node scripts/red.js zona --slug=ruta-del-prado --nombre="Ruta del Prado" --ciudad=Barranquilla --premio="Cena para 2" --desde=2026-10-15 --hasta=2027-01-31
+node scripts/red.js asignar --zona=ruta-del-prado --restaurantes=arepa-y-brasa,cafe-del-prado
+node scripts/red.js reto --zona=ruta-del-prado --titulo="Recorre la ruta" --tipo=VISITS --meta=4 --puntos=300 --patrocinador="Marca" --desde=2026-10-15 --hasta=2026-10-31
+node scripts/red.js sorteo --nombre="Factura premiada de noviembre" --premio="Moto eléctrica" --desde=2026-11-01 --hasta=2026-11-30 --fecha-sorteo=2026-12-05
+node scripts/red.js activar --sorteo=<id> --autorizacion="Coljuegos No. ____ de 2026" --terminos=https://…
+node scripts/red.js cerrar --sorteo=<id>
+node scripts/red.js exportar --sorteo=<id> > boletas.csv
+node scripts/red.js sortear --sorteo=<id>     # imprime la huella SHA-256 de la lista y la boleta ganadora
+node scripts/red.js estado
+```
+
+Marco legal: en Colombia todo sorteo, raspa y gana o ruleta en el que el azar elige al ganador es un juego promocional y requiere autorización previa de Coljuegos y pago de derechos de explotación, aunque la participación sea gratuita. Rachas, retos, álbum y ranking no dependen del azar. El sorteo debe hacerse con el delegado de Coljuegos o ante notario según lo que indique la autorización; `sortear` deja la selección aleatoria (`crypto.randomInt`) y la huella de la lista para el acta.
+
+Diseño: la interfaz usa rojo `#E93423` (el del logo), negro `#0A0A0A` y blanco, con el logo de Fácil en la barra superior de todas las vistas (`web/public/logo-facil-wide.jpg`) y en grande en el inicio y el ingreso. En modo oscuro del celular el fondo pasa a negro y el logo se mantiene.
+
 ## Stack
 
 - Node 22, Express 5, Zod, JWT para el personal.
@@ -111,7 +141,15 @@ conexión).
      --clave="clave-de-al-menos-10" --mesas=12 --premio="Parrillada para 2"
    ```
 
-   Para cuentas de caja, el administrador usa `POST /api/panel/staff` (en esta fase no tiene pantalla propia).
+   Para cuentas de caja (o administradores adicionales):
+
+   ```bash
+   DATABASE_URL="<la url con pooling>" node scripts/nuevo-usuario.js --restaurante=arepa-y-brasa \
+     --nombre="Caja principal" --correo=caja@restaurante.co --clave="clave-de-al-menos-10" --rol=caja
+   ```
+
+   También existe `POST /api/panel/staff` para hacerlo desde la API con la sesión del administrador.
+   Cualquier restaurante puede además crear su cuenta desde `/registro` (se cierra con `ALLOW_SIGNUP=false`).
 7. Probar `/healthz`, luego `/panel` con el administrador y `/r/<slug>?t=MESA-1&via=qr` desde un celular.
 8. El Cron Job diario (`0 14 * * *` UTC = 9:00 a. m. en Bogotá) ya queda programado por
    `vercel.json` en cuanto se despliega; se puede ver su historial en la pestaña **Cron Jobs** del
@@ -177,8 +215,9 @@ Con esto aparece el botón "Guardar en Google Wallet" en la tarjeta. El pase lle
 ## Pendientes conocidos de esta fase
 
 - **QR de facturas reales:** el lector (`server/lib/dian.js`) sigue el formato de pares `Clave: valor` del anexo técnico DIAN (`NitFac`, `ValTolFac`, `CUFE`…). Hay que validarlo con facturas y documentos POS de los proveedores de facturación de los locales piloto antes de lanzar; si un proveedor imprime solo la URL de consulta, la compra se confirma en caja.
-- **Migración inicial escrita a mano:** `prisma/migrations/20260925000000_init` se escribió siguiendo las convenciones de Prisma porque el entorno donde se construyó no podía descargar el motor de migraciones. Verificación recomendada: en una base local vacía, correr `npx prisma migrate deploy` y luego `npx prisma migrate dev`; si `migrate dev` propone una migración nueva, hay una diferencia con `schema.prisma` que conviene revisar antes de producción.
-- **Pruebas en navegador:** la API se probó de punta a punta contra PostgreSQL (registro, factura válida, repetida, de otro NIT, vencida, sin monto, tope diario, caja, premios, códigos de domicilio, panel, webhook y automatizaciones) y el frontend compila, pero no se hicieron pruebas automatizadas en navegador. La lectura con cámara (`html5-qrcode`) requiere HTTPS, que Vercel ya provee.
+- **Migraciones escritas a mano:** `prisma/migrations/20260925000000_init` y `20261006000000_red_y_juegos` se escribieron siguiendo las convenciones de Prisma porque el entorno donde se construyeron no podía descargar el motor de migraciones. Ambas se aplicaron sin errores sobre PostgreSQL 16 vacío. Verificación recomendada: en una base local vacía, correr `npx prisma migrate deploy` y luego `npx prisma migrate dev`; si `migrate dev` propone una migración nueva, hay una diferencia con `schema.prisma` que conviene revisar antes de producción.
+- **Retos de marca por producto:** el QR de la factura no trae el detalle de productos, así que los retos patrocinados se miden por visitas, gasto o racha. Retos del tipo "pide la bebida X" requieren integración con el POS (fase 3).
+- **Pruebas:** la API se probó de punta a punta contra PostgreSQL (registro, factura válida, repetida, de otro NIT, vencida, sin monto, tope diario, caja, premios, códigos de domicilio, panel, webhook, automatizaciones, racha, retos de restaurante y de zona, álbum completo, boletas solo con sorteo autorizado, sorteo y exportación) y las vistas principales se revisaron en Chromium a ancho de celular y de escritorio. La lectura con cámara (`html5-qrcode`) requiere HTTPS, que Vercel ya provee y que falta probar en celulares reales.
 - **Verificación del celular:** el registro no confirma el número con un código; un número ya inscrito solo recibe su tarjeta por WhatsApp, así que no se exponen datos de otra persona. El código por SMS o WhatsApp queda para la fase 2.
 - **Fase 2 según el documento de producto:** agente de WhatsApp para reservas y pedidos, copiloto de IA en el panel, niveles y retos, Apple Wallet, pantalla de usuarios de caja, varios números de WhatsApp por despliegue.
 - **Fase 3:** acumulación automática con pago Bre-B e integraciones con POS.

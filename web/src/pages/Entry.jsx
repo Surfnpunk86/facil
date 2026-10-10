@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api, saveCard, savedCard, formatPhone } from '../api.js';
-import { Mark, Venue } from '../components.jsx';
+import { Screen, Venue } from '../components.jsx';
 
 const VIA = { nfc: 'NFC', qr: 'QR', wa: 'WHATSAPP', wallet: 'WALLET' };
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -14,6 +14,7 @@ export default function Entry() {
   const navigate = useNavigate();
   const door = VIA[params.get('via')] || 'QR';
   const tag = params.get('t') || undefined;
+  const waiter = params.get('m') || undefined;
 
   const [info, setInfo] = useState(null);
   const [error, setError] = useState(null);
@@ -40,7 +41,7 @@ export default function Entry() {
       const birthday = form.month && form.day ? `${String(form.month).padStart(2, '0')}-${String(form.day).padStart(2, '0')}` : '';
       const res = mode === 'member'
         ? await api(`/r/${slug}/card-link`, { method: 'POST', body: { phone: form.phone } })
-        : await api(`/r/${slug}/join`, { method: 'POST', body: { name: form.name, phone: form.phone, birthday, consent: true, door, tag } });
+        : await api(`/r/${slug}/join`, { method: 'POST', body: { name: form.name, phone: form.phone, birthday, consent: true, door, tag, waiter } });
       if (res.status === 'created') {
         saveCard(slug, res.token);
         navigate(`/c/${res.token}?nuevo=1&via=${params.get('via') || 'qr'}`);
@@ -56,35 +57,35 @@ export default function Entry() {
   }
 
   if (error && !info) {
-    return <main className="mobile"><Mark /><div className="error">{error}</div></main>;
+    return <Screen><div className="error">{error}</div></Screen>;
   }
-  if (!info) return <main className="mobile"><Mark /><p className="muted">Cargando…</p></main>;
+  if (!info) return <Screen><p className="muted">Cargando…</p></Screen>;
   const r = info.restaurant;
 
   if (existing && mode !== 'sent') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Club de clientes">
         <Venue restaurant={r} subtitle={info.tag?.label || 'Club de clientes'} />
         <h1>Ya tienes tu tarjeta del Club</h1>
         <p className="muted">Ábrela para sumar la compra de hoy escaneando el QR de tu factura.</p>
         <button className="btn" onClick={() => navigate(`/c/${existing}?via=${params.get('via') || 'qr'}`)}>Abrir mi tarjeta</button>
-      </main>
+      </Screen>
     );
   }
 
   if (mode === 'sent') {
     return (
-      <main className="mobile">
+      <Screen title={r.name} subtitle="Club de clientes">
         <Venue restaurant={r} />
         <h1>Te enviamos tu tarjeta por WhatsApp</h1>
         <p className="muted">Ese número ya está en el Club. Abre el enlace que te llegó al WhatsApp del {form.phone} para ver tus puntos y sumar la compra de hoy.</p>
         <button className="link" onClick={() => setMode('join')}>Usar otro número</button>
-      </main>
+      </Screen>
     );
   }
 
   return (
-    <main className="mobile">
+    <Screen title={r.name} subtitle="Club de clientes">
       <Venue restaurant={r} subtitle={info.tag?.label ? `${info.tag.label} · Club de clientes` : 'Club de clientes'} />
       <div className="stack" style={{ gap: 4 }}>
         <h1>{mode === 'member' ? 'Recupera tu tarjeta' : 'Únete al Club y suma con esta visita'}</h1>
@@ -135,6 +136,6 @@ export default function Entry() {
         {mode === 'join' ? 'Ya soy del Club' : 'Soy nuevo, quiero unirme'}
       </button>
       <p className="muted small">¿Prefieres no usar el celular? Dile tu número al cajero y él suma tu compra.</p>
-    </main>
+    </Screen>
   );
 }

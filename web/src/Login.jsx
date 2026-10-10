@@ -24,8 +24,9 @@ export default function Login({ title, onLogin, allowSignup = false }) {
   }
 
   return (
-    <main className="mobile" style={{ justifyContent: 'center' }}>
-      <div><Mark /></div>
+    <div className="hero">
+    <div className="hero-top"><Mark size="lg" /></div>
+    <main className="mobile">
       <h1>{title}</h1>
       <form className="stack" onSubmit={submit}>
         <div className="field">
@@ -49,5 +50,6 @@ export default function Login({ title, onLogin, allowSignup = false }) {
         </div>
       )}
     </main>
+    </div>
   );
 }

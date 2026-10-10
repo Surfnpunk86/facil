@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { sendTemplate } from './whatsapp.js';
 import { firstName, randomToken, HttpError } from './util.js';
 import { googleWalletSaveUrl } from './wallet.js';
+import { gamesView } from './games.js';
 
 export const cardUrl = (customer) => `${config.publicUrl}/c/${customer.cardToken}`;
 
@@ -22,7 +23,7 @@ export async function automationEnabled(restaurantId, key) {
  * Crea el cliente si no existe. Devuelve { customer, created }.
  * `consent` = true solo cuando el cliente marcó la autorización él mismo.
  */
-export async function upsertCustomer({ restaurant, phone, name, birthMonth, birthDay, consent, door }) {
+export async function upsertCustomer({ restaurant, phone, name, birthMonth, birthDay, consent, door, waiterId = null }) {
   const existing = await prisma.customer.findUnique({ where: { restaurantId_phone: { restaurantId: restaurant.id, phone } } });
   if (existing) {
     const data = {};
@@ -42,7 +43,8 @@ export async function upsertCustomer({ restaurant, phone, name, birthMonth, birt
       consentAt: consent ? new Date() : null,
       consentVersion: consent ? config.consentVersion : null,
       cardToken: randomToken(),
-      joinedVia: door || null
+      joinedVia: door || null,
+      waiterId
     }
   });
   return { customer, created: true };
@@ -90,6 +92,7 @@ export async function cardView(customer, restaurant) {
     needsConsent: !customer.consentAt,
     rewards: rewards.map((r) => ({ id: r.id, kind: r.kind, description: r.description, expiresAt: r.expiresAt })),
     googleWalletUrl: googleWalletSaveUrl({ restaurant, customer }),
+    games: await gamesView(customer, restaurant),
     restaurant: publicRestaurant(restaurant)
   };
 }

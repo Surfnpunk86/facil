@@ -1,0 +1,20 @@
+/* Solo para la versión de revisión: barra inferior para saltar entre vistas y visor de cámara simulado. */
+.review-app { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); min-height: 100vh; }
+.review-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--black); border-top: 3px solid var(--red); padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; }
+.review-tag { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--red); white-space: nowrap; flex: none; }
+.review-views { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.review-views::-webkit-scrollbar { display: none; }
+.review-views button { border: 1.5px solid #3A3A3A; background: transparent; color: #E6E6E6; border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; flex: none; }
+.review-views button[aria-current="page"] { background: var(--red); border-color: var(--red); color: #fff; }
+.review-views .review-reset { margin-left: auto; color: #9A9A9A; border-style: dashed; }
+@media (max-width: 640px) { .review-tag { display: none; } }
+.toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+.hero { min-height: auto; }
+
+.demo-scanner { background: var(--black); color: #fff; padding: 20px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; min-height: 0; }
+.demo-scanner p { font-size: 13px; color: #BDBDBD; max-width: 32ch; }
+.demo-viewfinder { width: 180px; height: 180px; border-radius: 16px; position: relative; background: #1A1A1A; box-shadow: inset 0 0 0 2px #333; overflow: hidden; }
+.demo-viewfinder::before { content: ""; position: absolute; inset: 22px; border: 3px solid var(--red); border-radius: 10px; }
+.demo-viewfinder span { position: absolute; left: 26px; right: 26px; height: 2px; background: var(--red); box-shadow: 0 0 12px var(--red); animation: demo-scan 1.8s ease-in-out infinite alternate; top: 30px; }
+@keyframes demo-scan { to { top: 148px; } }
+@media (prefers-reduced-motion: reduce) { .demo-viewfinder span { animation: none; top: 50%; } }

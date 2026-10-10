@@ -1,6 +1,7 @@
 // Reglas del Club: puntos por monto, un sello por compra validada, premio al completar la tarjeta.
 import { prisma } from '../db.js';
 import { HttpError, startOfBogotaDay } from './util.js';
+import { afterPurchase } from './games.js';
 
 export function pointsFor(amount, restaurant) {
   return Math.floor(amount / 1000) * restaurant.pointsPerThousand;
@@ -14,7 +15,7 @@ export async function awardPurchase({ restaurant, customerId, amount, door, vali
   if (!Number.isInteger(amount) || amount <= 0) throw new HttpError(400, 'invalid_amount', 'El monto de la compra no es válido.');
   if (amount > 20_000_000) throw new HttpError(400, 'invalid_amount', 'El monto supera el máximo permitido para una compra.');
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const today = startOfBogotaDay();
     const todayCount = await tx.purchase.count({ where: { customerId, createdAt: { gte: today } } });
     if (todayCount >= restaurant.maxClaimsPerDay) {
@@ -60,4 +61,16 @@ export async function awardPurchase({ restaurant, customerId, amount, door, vali
     });
     return { purchase, customer: updated, pointsAwarded: points, rewardUnlocked: reward };
   });
+
+  // Juegos de la red: boletas, láminas y retos. Un fallo aquí no anula la compra ya registrada.
+  try {
+    result.extras = await afterPurchase({ restaurant, customer: result.customer, purchase: result.purchase });
+    if (result.extras.challenges.length) {
+      result.customer = await prisma.customer.findUniqueOrThrow({ where: { id: customerId } });
+    }
+  } catch (e) {
+    console.error('[juegos] error después de la compra', e);
+    result.extras = { tickets: [], sticker: null, albumCompleted: null, challenges: [] };
+  }
+  return result;
 }

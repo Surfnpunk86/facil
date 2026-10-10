@@ -1,12 +1,27 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import QRCode from 'qrcode';
+import { Link } from 'react-router-dom';
+import logoUrl from './assets/logo-facil-wide.jpg';
 
-export function Mark() {
-  return <a className="mark" href="/" aria-label="Fácil">Fácil<sup>®</sup></a>;
+export function Mark({ size = '' }) {
+  return <Link className="logo-link" to="/" aria-label="Fácil, inicio"><img className={`logo-img ${size}`} src={logoUrl} alt="Fácil" /></Link>;
+}
+
+// Barra superior negra con el logo rojo. `narrow` la ajusta al ancho de las vistas de celular.
+export function AppBar({ narrow = false, title, subtitle, children }) {
+  return (
+    <header className={`appbar ${narrow ? 'narrow' : ''}`}>
+      <div className="appbar-in">
+        <Mark />
+        {(title || subtitle) && <div className="ctx">{title && <b>{title}</b>}{subtitle}</div>}
+        {children && <div className="end">{children}</div>}
+      </div>
+    </header>
+  );
 }
 
 export function initials(name) {
-  return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  return (name || '?').split(/\s+/).filter((w) => /\p{L}/u.test(w)).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
 }
 
 export function Venue({ restaurant, subtitle = 'Club de clientes' }) {
@@ -34,7 +49,7 @@ export function Pass({ card, justStamped = false }) {
     <div className="pass">
       <div className="row between">
         <b style={{ fontSize: 17 }}>{card.restaurant.name}</b>
-        <small>Club</small>
+        <img className="brand" src={logoUrl} alt="" aria-hidden="true" />
       </div>
       <div className="row between">
         <div><small>Puntos</small><div className="big">{card.points.toLocaleString('es-CO')}</div></div>
@@ -88,5 +103,15 @@ export function Keypad({ onKey, action }) {
     <div className="keypad">
       {keys.map((k) => <button key={k} type="button" onClick={() => onKey(k)}>{k}</button>)}
     </div>
+  );
+}
+
+// Pantalla de celular con la barra negra y el logo arriba.
+export function Screen({ title, subtitle, children }) {
+  return (
+    <>
+      <AppBar narrow title={title} subtitle={subtitle} />
+      <main className="mobile">{children}</main>
+    </>
   );
 }

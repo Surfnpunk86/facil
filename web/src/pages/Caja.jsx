@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api, getStaffSession, setStaffSession, cop, formatPhone } from '../api.js';
 import Scanner from '../Scanner.jsx';
-import { Mark, Keypad, initials, useToast } from '../components.jsx';
+import { AppBar, Keypad, initials, useToast } from '../components.jsx';
 import Login from '../Login.jsx';
 
 export default function Caja() {
@@ -43,7 +43,16 @@ function Pos({ session, onLogout }) {
       : { customerId: customer.id, amount: Number(amount), door: customer.viaPass ? 'WALLET' : 'CASHIER' };
     const res = await api('/staff/purchases', { method: 'POST', body, auth: true });
     const who = res.customer.name ? res.customer.name.split(' ')[0] : 'Cliente';
-    toast(res.newCustomer ? `Compra sumada. ${who} recibirá su tarjeta por WhatsApp.` : `${who}: +${res.pointsAwarded} puntos y 1 sello.`);
+    const ex = res.extras || {};
+    const bonus = [
+      ex.tickets?.length ? `${ex.tickets.length === 1 ? '1 boleta' : ex.tickets.length + ' boletas'} para la factura premiada` : null,
+      ex.sticker?.isNew ? 'lámina nueva del álbum' : null,
+      ...(ex.challenges || []).map((c) => `reto "${c.title}" (+${c.bonusPoints})`)
+    ].filter(Boolean);
+    toast(res.newCustomer
+      ? `Compra sumada. ${who} recibirá su tarjeta por WhatsApp.`
+      : `${who}: +${res.pointsAwarded} puntos y 1 sello${bonus.length ? ', ' + bonus.join(', ') : ''}.`);
+    if (ex.albumCompleted) toast(`¡${who} completó el álbum ${ex.albumCompleted.zoneName}! Premio: ${ex.albumCompleted.rewardText}`);
     if (res.rewardUnlocked) toast(`¡Completó la tarjeta! Premio: ${res.rewardUnlocked.description}`);
     setCustomer(res.customer);
     setAmount('');
@@ -67,11 +76,11 @@ function Pos({ session, onLogout }) {
   }
 
   return (
+    <>
+    <AppBar title={session.restaurant.name} subtitle={`Caja · ${session.staff.name}`}>
+      <button className="sm on-dark" onClick={onLogout}>Salir</button>
+    </AppBar>
     <main className="desk">
-      <header className="row between">
-        <div className="row"><Mark /><b>{session.restaurant.name}</b><span className="muted">Caja · {session.staff.name}</span></div>
-        <button className="sm" onClick={onLogout}>Salir</button>
-      </header>
 
       <div className="grid2">
         <section className="panel">
@@ -83,7 +92,7 @@ function Pos({ session, onLogout }) {
 
           {mode === 'pase' && !customer && (
             <>
-              <Scanner onScan={lookupCard} onError={setError} />
+              <Scanner kind="pass" onScan={lookupCard} onError={setError} />
               <p className="muted small">Pide al cliente que abra su tarjeta y apunta al código QR.</p>
             </>
           )}
@@ -139,7 +148,7 @@ function Pos({ session, onLogout }) {
               <div className="suggest"><b>Sugerencia:</b> {customer.suggestion}</div>
               {customer.rewards.map((rw) => (
                 <div className="reward row between" key={rw.id}>
-                  <span><b>Premio:</b> {rw.description}</span>
+                  <span><b>{rw.kind === 'ALBUM' ? 'Premio del álbum' : rw.kind === 'BIRTHDAY' ? 'Cumpleaños' : 'Premio'}:</b> {rw.description}</span>
                   <button className="sm" disabled={busy} onClick={() => redeem(rw)}>Canjear</button>
                 </div>
               ))}
@@ -150,5 +159,6 @@ function Pos({ session, onLogout }) {
       </div>
       {toastNode}
     </main>
+    </>
   );
 }

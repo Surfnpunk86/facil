@@ -32,12 +32,26 @@ enum StaffRole {
 enum RewardKind {
   STAMP_CARD
   BIRTHDAY
+  ALBUM
 }
 
 enum RewardStatus {
   AVAILABLE
   REDEEMED
   EXPIRED
+}
+
+enum ChallengeKind {
+  VISITS // número de compras validadas en el periodo
+  SPEND // gasto acumulado en el periodo (pesos)
+  STREAK_WEEKS // semanas seguidas con al menos una compra
+}
+
+enum DrawStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  DRAWN
 }
 
 enum AutomationKey {
@@ -62,6 +76,8 @@ model Restaurant {
   ownerAlertPhone    String? // recibe alertas de calificaciones bajas
   maxClaimsPerDay    Int      @default(2) // compras validadas por cliente por día
   invoiceMaxAgeHours Int      @default(48)
+  zoneId             String?
+  zone               Zone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   createdAt          DateTime @default(now())
 
   staff         Staff[]
@@ -74,6 +90,8 @@ model Restaurant {
   entries       EntryEvent[]
   messages      MessageLog[]
   rewards       Reward[]
+  waiters       Waiter[]
+  challenges    Challenge[]
 }
 
 model Staff {
@@ -103,53 +121,57 @@ model Tag {
 }
 
 model Customer {
-  id            String    @id @default(cuid())
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  name          String?
-  phone         String // formato E.164, ej. +573005551234
-  birthMonth    Int?
-  birthDay      Int?
-  consentAt     DateTime? // autorización Ley 1581; sin ella no se envía marketing
+  id             String     @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name           String?
+  phone          String // formato E.164, ej. +573005551234
+  birthMonth     Int?
+  birthDay       Int?
+  consentAt      DateTime? // autorización Ley 1581; sin ella no se envía marketing
   consentVersion String?
-  optOut        Boolean   @default(false)
-  cardToken     String    @unique
-  points        Int       @default(0)
-  stamps        Int       @default(0)
-  rewardsEarned Int       @default(0)
-  visits        Int       @default(0)
-  totalSpent    Int       @default(0)
-  firstVisitAt  DateTime?
-  lastVisitAt   DateTime?
-  joinedVia     Door?
-  createdAt     DateTime  @default(now())
+  optOut         Boolean    @default(false)
+  cardToken      String     @unique
+  points         Int        @default(0)
+  stamps         Int        @default(0)
+  rewardsEarned  Int        @default(0)
+  visits         Int        @default(0)
+  totalSpent     Int        @default(0)
+  firstVisitAt   DateTime?
+  lastVisitAt    DateTime?
+  joinedVia      Door?
+  waiterId       String? // mesero que lo inscribió
+  waiter         Waiter?    @relation(fields: [waiterId], references: [id], onDelete: SetNull)
+  createdAt      DateTime   @default(now())
 
   purchases Purchase[]
   rewards   Reward[]
   feedback  Feedback[]
   entries   EntryEvent[]
   messages  MessageLog[]
+  tickets   DrawTicket[]
 
   @@unique([restaurantId, phone])
   @@index([restaurantId, lastVisitAt])
 }
 
 model Purchase {
-  id            String     @id @default(cuid())
+  id            String      @id @default(cuid())
   restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   customerId    String
-  customer      Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   amount        Int
   door          Door
   validation    Validation
   invoiceKey    String? // CUFE o CUDE; evita que una factura se use dos veces
   invoiceNumber String?
   pointsAwarded Int
-  stampAwarded  Boolean    @default(true)
+  stampAwarded  Boolean     @default(true)
   staffId       String?
-  staff         Staff?     @relation(fields: [staffId], references: [id])
-  createdAt     DateTime   @default(now())
+  staff         Staff?      @relation(fields: [staffId], references: [id])
+  createdAt     DateTime    @default(now())
+  ticket        DrawTicket?
 
   @@unique([restaurantId, invoiceKey])
   @@index([restaurantId, createdAt])
@@ -235,4 +257,123 @@ model MessageLog {
   createdAt    DateTime   @default(now())
 
   @@index([customerId, kind, createdAt])
+}
+
+// ---------- Red de beneficios y juegos ----------
+
+// Zona de la red (una página del álbum): restaurantes cercanos que comparten álbum, retos y sorteos.
+model Zone {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String // ej. "Ruta del Prado"
+  city        String?
+  rewardText  String   @default("Premio por completar la página del álbum")
+  seasonStart DateTime // las láminas cuentan desde esta fecha
+  seasonEnd   DateTime
+  createdAt   DateTime @default(now())
+
+  restaurants Restaurant[]
+  completions AlbumCompletion[]
+  challenges  Challenge[]
+  draws       Draw[]
+}
+
+// Página del álbum completada por un cliente (identificado por su celular en toda la red).
+model AlbumCompletion {
+  id           String   @id @default(cuid())
+  zoneId       String
+  zone         Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  phone        String
+  seasonStart  DateTime
+  restaurantId String // restaurante donde completó la página y donde se crea el premio
+  rewardId     String?
+  createdAt    DateTime @default(now())
+
+  @@unique([zoneId, phone, seasonStart])
+}
+
+// Mesero con código propio: los clientes que inscribe quedan a su nombre para el ranking.
+model Waiter {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name         String
+  code         String // ej. LUIS, va en la URL de la pieza: ?m=LUIS
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  customers    Customer[]
+
+  @@unique([restaurantId, code])
+}
+
+// Reto: de un restaurante (restaurantId) o de toda una zona, opcionalmente patrocinado (zoneId sin restaurantId).
+model Challenge {
+  id           String                @id @default(cuid())
+  restaurantId String?
+  restaurant   Restaurant?           @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  zoneId       String?
+  zone         Zone?                 @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  kind         ChallengeKind
+  target       Int
+  bonusPoints  Int
+  sponsorName  String?
+  startsAt     DateTime
+  endsAt       DateTime
+  active       Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  completions  ChallengeCompletion[]
+
+  @@index([restaurantId, active])
+  @@index([zoneId, active])
+}
+
+model ChallengeCompletion {
+  id            String    @id @default(cuid())
+  challengeId   String
+  challenge     Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  phone         String
+  customerId    String // registro del cliente donde se acreditaron los puntos
+  pointsAwarded Int
+  createdAt     DateTime  @default(now())
+
+  @@unique([challengeId, phone])
+}
+
+// Factura premiada: cada compra validada durante el periodo genera una boleta.
+// Solo puede activarse con número de autorización de Coljuegos (ver scripts/red.js).
+model Draw {
+  id                     String       @id @default(cuid())
+  zoneId                 String? // null = toda la red
+  zone                   Zone?        @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  name                   String
+  prizeText              String
+  sponsorName            String?
+  startsAt               DateTime
+  endsAt                 DateTime
+  drawAt                 DateTime
+  coljuegosAuthorization String?
+  termsUrl               String?
+  status                 DrawStatus   @default(DRAFT)
+  winnerTicketId         String?
+  drawnAt                DateTime?
+  createdAt              DateTime     @default(now())
+  tickets                DrawTicket[]
+}
+
+model DrawTicket {
+  id         String   @id @default(cuid())
+  drawId     String
+  draw       Draw     @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  number     Int
+  purchaseId String   @unique
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  phone      String
+  createdAt  DateTime @default(now())
+
+  @@unique([drawId, number])
+  @@index([drawId, phone])
 }

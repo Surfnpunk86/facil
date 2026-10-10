@@ -59,7 +59,8 @@ const joinSchema = z.object({
   birthday: z.string().regex(/^\d{2}-\d{2}$/).optional().or(z.literal('')),
   consent: z.literal(true, { errorMap: () => ({ message: 'Necesitamos tu autorización de datos para crear la tarjeta.' }) }),
   door: z.enum(['NFC', 'QR', 'WHATSAPP', 'WALLET']).default('QR'),
-  tag: z.string().max(40).optional()
+  tag: z.string().max(40).optional(),
+  waiter: z.string().max(20).optional()
 });
 
 r.post('/r/:slug/join', async (req, res) => {
@@ -73,7 +74,13 @@ r.post('/r/:slug/join', async (req, res) => {
     if (m >= 1 && m <= 12 && d >= 1 && d <= 31) { birthMonth = m; birthDay = d; }
   }
 
-  const { customer, created } = await upsertCustomer({ restaurant: rest, phone, name: body.name, birthMonth, birthDay, consent: true, door: body.door });
+  const waiter = body.waiter
+    ? await prisma.waiter.findUnique({ where: { restaurantId_code: { restaurantId: rest.id, code: body.waiter.toUpperCase() } } })
+    : null;
+  const { customer, created } = await upsertCustomer({
+    restaurant: rest, phone, name: body.name, birthMonth, birthDay, consent: true, door: body.door,
+    waiterId: waiter?.active ? waiter.id : null
+  });
   const tag = await findTag(rest.id, body.tag);
   await prisma.entryEvent.create({ data: { restaurantId: rest.id, door: body.door, tagId: tag?.id, customerId: customer.id } });
 
@@ -149,6 +156,7 @@ r.post('/c/:token/invoice', async (req, res) => {
     invoiceNumber: inv.number,
     pointsAwarded: result.pointsAwarded,
     rewardUnlocked: result.rewardUnlocked ? { description: result.rewardUnlocked.description } : null,
+    extras: result.extras,
     card: await cardView(result.customer, rest)
   });
 });
@@ -167,7 +175,7 @@ r.post('/c/:token/code', async (req, res) => {
   try {
     const result = await awardPurchase({ restaurant: c.restaurant, customerId: c.id, amount: dc.amount, door: 'DELIVERY_CODE', validation: 'DELIVERY_CODE' });
     await sendPurchaseReceipt(c.restaurant, result.customer, result.pointsAwarded);
-    res.json({ ok: true, amount: dc.amount, pointsAwarded: result.pointsAwarded, rewardUnlocked: result.rewardUnlocked ? { description: result.rewardUnlocked.description } : null, card: await cardView(result.customer, c.restaurant) });
+    res.json({ ok: true, amount: dc.amount, pointsAwarded: result.pointsAwarded, rewardUnlocked: result.rewardUnlocked ? { description: result.rewardUnlocked.description } : null, extras: result.extras, card: await cardView(result.customer, c.restaurant) });
   } catch (e) {
     await prisma.deliveryCode.update({ where: { id: dc.id }, data: { usedAt: null, customerId: null } });
     throw e;

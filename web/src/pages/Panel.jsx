@@ -1,11 +1,13 @@
 // Panel del administrador del restaurante.
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { api, getStaffSession, setStaffSession, cop } from '../api.js';
-import { Mark, QrImage, useToast } from '../components.jsx';
+import { Screen, AppBar, QrImage, useToast } from '../components.jsx';
+import Juegos from './Juegos.jsx';
 import Login from '../Login.jsx';
 
 const DOOR_NAMES = { NFC: 'NFC', QR: 'QR', WHATSAPP: 'WhatsApp', WALLET: 'Pase de billetera', CASHIER: 'Celular en caja', DELIVERY_CODE: 'Código domicilio' };
-const TABS = [['resumen', 'Resumen'], ['opiniones', 'Opiniones'], ['piezas', 'Piezas de mesa'], ['config', 'Configuración']];
+const TABS = [['resumen', 'Resumen'], ['juegos', 'Juegos y red'], ['opiniones', 'Opiniones'], ['piezas', 'Piezas de mesa'], ['config', 'Configuración']];
 
 export default function Panel() {
   const [session, setSession] = useState(getStaffSession());
@@ -13,8 +15,8 @@ export default function Panel() {
   if (!session) return <Login title="Panel del restaurante" onLogin={setSession} allowSignup />;
   if (session.staff.role !== 'OWNER') {
     return (
-      <main className="mobile"><Mark /><h1>Este usuario es de caja</h1><p className="muted">El panel es solo para el administrador del restaurante.</p>
-        <a className="btn dark" href="/caja">Ir a la caja</a><button className="link" onClick={logout}>Entrar con otro usuario</button></main>
+      <Screen><h1>Este usuario es de caja</h1><p className="muted">El panel es solo para el administrador del restaurante.</p>
+        <Link className="btn dark" to="/caja">Ir a la caja</Link><button className="link" onClick={logout}>Entrar con otro usuario</button></Screen>
     );
   }
   return <Dashboard session={session} onLogout={logout} />;
@@ -34,22 +36,22 @@ function Dashboard({ session, onLogout }) {
   const [tab, setTab] = useState('resumen');
   const [toastNode, toast] = useToast();
   return (
+    <>
+    <AppBar title={session.restaurant.name} subtitle="Panel del restaurante">
+      <nav className="tabs" role="tablist">
+        {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}
+      </nav>
+      <button className="sm on-dark" onClick={onLogout}>Salir</button>
+    </AppBar>
     <main className="desk">
-      <header className="row between">
-        <div className="row"><Mark /><b>{session.restaurant.name}</b><span className="muted">Panel</span></div>
-        <div className="row">
-          <nav className="tabs" role="tablist">
-            {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}
-          </nav>
-          <button className="sm" onClick={onLogout}>Salir</button>
-        </div>
-      </header>
       {tab === 'resumen' && <Resumen toast={toast} />}
+      {tab === 'juegos' && <Juegos toast={toast} />}
       {tab === 'opiniones' && <Opiniones toast={toast} />}
       {tab === 'piezas' && <Piezas toast={toast} />}
       {tab === 'config' && <Config toast={toast} />}
       {toastNode}
     </main>
+    </>
   );
 }
 
