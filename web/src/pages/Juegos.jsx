@@ -129,13 +129,13 @@ function Zona({ zone }) {
     <section className="panel">
       <h3>Álbum de la zona</h3>
       {!zone ? (
-        <p className="muted">Tu restaurante aún no está en una zona del álbum. El equipo de Fácil asigna las zonas cuando hay suficientes locales cercanos en la red.</p>
+        <p className="muted">Tu establecimiento aún no está en una zona del álbum. El equipo de Fácil asigna las zonas cuando hay suficientes locales cercanos en la red.</p>
       ) : (
         <>
           <div className="kv"><span>Zona</span><b>{zone.name}</b></div>
-          <div className="kv"><span>Restaurantes en la página</span><b>{zone.restaurants.length}</b></div>
+          <div className="kv"><span>Establecimientos en la página</span><b>{zone.restaurants.length}</b></div>
           <div className="kv"><span>Álbumes completos en la temporada</span><b>{zone.completions}</b></div>
-          <div className="kv"><span>Completados en tu restaurante</span><b>{zone.completedHere}</b></div>
+          <div className="kv"><span>Completados en tu establecimiento</span><b>{zone.completedHere}</b></div>
           <div className="kv"><span>Premio de la página</span><b>{zone.rewardText}</b></div>
           <p className="muted small">Temporada del {fmtDate(zone.seasonStart)} al {fmtDate(zone.seasonEnd)}. Cuando un cliente completa la página en tu local, el premio se crea aquí y lo canjeas en caja.</p>
           <div className="chips">{zone.restaurants.map((n) => <span className="chip" key={n}>{n}</span>)}</div>

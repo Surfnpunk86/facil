@@ -21,6 +21,6 @@ export function requireStaff(req, _res, next) {
 }
 
 export function requireOwner(req, _res, next) {
-  if (req.staff?.role !== 'OWNER') return next(new HttpError(403, 'forbidden', 'Solo el administrador del restaurante puede ver esto.'));
+  if (req.staff?.role !== 'OWNER') return next(new HttpError(403, 'forbidden', 'Solo el administrador del establecimiento puede ver esto.'));
   next();
 }

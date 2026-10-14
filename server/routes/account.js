@@ -29,14 +29,14 @@ async function freeSlug(name) {
     const slug = i === 0 ? base : `${base}-${Math.floor(1000 + Math.random() * 9000)}`;
     if (!(await prisma.restaurant.findUnique({ where: { slug } }))) return slug;
   }
-  throw new HttpError(409, 'slug_taken', 'No pudimos asignar una dirección para tu restaurante. Intenta con otro nombre.');
+  throw new HttpError(409, 'slug_taken', 'No pudimos asignar una dirección para tu establecimiento. Intenta con otro nombre.');
 }
 
 r.post('/auth/register', async (req, res) => {
   if (!config.allowSignup) throw new HttpError(403, 'signup_closed', 'El registro está cerrado. Pide acceso al administrador de Fácil.');
   const body = z
     .object({
-      restaurantName: z.string().trim().min(2, 'Escribe el nombre del restaurante.').max(80),
+      restaurantName: z.string().trim().min(2, 'Escribe el nombre del establecimiento.').max(80),
       nit: z.string().transform(onlyDigits).pipe(z.string().min(6, 'El NIT debe tener al menos 6 dígitos.').max(12)),
       city: z.string().trim().max(60).optional(),
       name: z.string().trim().min(2, 'Escribe tu nombre.').max(80),

@@ -22,8 +22,8 @@ export function StreakBlock({ streak }) {
       </div>
       <p className="muted">
         {streak.activeThisWeek
-          ? 'Esta semana ya cuenta. Vuelve la próxima a cualquier restaurante de la red para no romperla.'
-          : n > 0 ? 'Haz una compra esta semana en cualquier restaurante de la red para mantenerla.' : 'Cada semana con al menos una compra validada suma a tu racha.'}
+          ? 'Esta semana ya cuenta. Vuelve la próxima a cualquier establecimiento de la red para no romperla.'
+          : n > 0 ? 'Haz una compra esta semana en cualquier establecimiento de la red para mantenerla.' : 'Cada semana con al menos una compra validada suma a tu racha.'}
       </p>
     </section>
   );
@@ -74,7 +74,7 @@ export function AlbumBlock({ album }) {
       <p className="muted">
         {album.completed
           ? `Completaste la página. Tu premio: ${album.rewardText}.`
-          : `Gana la lámina de cada restaurante con una compra. Página completa: ${album.rewardText}. Temporada hasta el ${fmtDate(album.seasonEnd)}.`}
+          : `Gana la lámina de cada establecimiento con una compra. Página completa: ${album.rewardText}. Temporada hasta el ${fmtDate(album.seasonEnd)}.`}
       </p>
     </section>
   );

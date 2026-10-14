@@ -22,7 +22,7 @@ async function findTag(restaurantId, code) {
 
 async function customerByToken(token) {
   const c = await prisma.customer.findUnique({ where: { cardToken: String(token) }, include: { restaurant: true } });
-  if (!c) throw new HttpError(404, 'card_not_found', 'No encontramos esta tarjeta. Pide un enlace nuevo en el restaurante.');
+  if (!c) throw new HttpError(404, 'card_not_found', 'No encontramos esta tarjeta. Pide un enlace nuevo en el establecimiento.');
   return c;
 }
 

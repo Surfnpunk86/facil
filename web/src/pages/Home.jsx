@@ -14,8 +14,8 @@ export default function Home({ notFound = false }) {
         </p>
         <div className="stack">
           <Link className="btn" to="/caja">Entrar a la caja</Link>
-          <Link className="btn ghost" to="/panel">Entrar al panel del restaurante</Link>
-          <Link className="btn ghost" to="/registro">Crear cuenta de restaurante</Link>
+          <Link className="btn ghost" to="/panel">Entrar al panel del establecimiento</Link>
+          <Link className="btn ghost" to="/registro">Crear cuenta del establecimiento</Link>
         </div>
       </main>
     </div>

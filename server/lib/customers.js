@@ -10,7 +10,7 @@ export const cardUrl = (customer) => `${config.publicUrl}/c/${customer.cardToken
 
 export async function getRestaurantBySlug(slug) {
   const r = await prisma.restaurant.findUnique({ where: { slug } });
-  if (!r) throw new HttpError(404, 'restaurant_not_found', 'No encontramos este restaurante.');
+  if (!r) throw new HttpError(404, 'restaurant_not_found', 'No encontramos este establecimiento.');
   return r;
 }
 

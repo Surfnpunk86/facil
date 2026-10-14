@@ -26,10 +26,10 @@ export default function Register() {
   return (
     <main className="mobile" style={{ justifyContent: 'center' }}>
       <div><Mark /></div>
-      <h1>Crea la cuenta de tu restaurante</h1>
+      <h1>Crea la cuenta de tu establecimiento</h1>
       <form className="stack" onSubmit={submit}>
         <div className="field">
-          <label htmlFor="rn">Nombre del restaurante</label>
+          <label htmlFor="rn">Nombre del establecimiento</label>
           <input id="rn" value={f.restaurantName} onChange={set('restaurantName')} required maxLength={80} />
         </div>
         <div className="field">

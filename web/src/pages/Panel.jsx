@@ -1,4 +1,4 @@
-// Panel del administrador del restaurante.
+// Panel del administrador del establecimiento.
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api, getStaffSession, setStaffSession, cop } from '../api.js';
@@ -12,10 +12,10 @@ const TABS = [['resumen', 'Resumen'], ['juegos', 'Juegos y red'], ['opiniones', 
 export default function Panel() {
   const [session, setSession] = useState(getStaffSession());
   const logout = () => { setStaffSession(null); setSession(null); };
-  if (!session) return <Login title="Panel del restaurante" onLogin={setSession} allowSignup />;
+  if (!session) return <Login title="Panel del establecimiento" onLogin={setSession} allowSignup />;
   if (session.staff.role !== 'OWNER') {
     return (
-      <Screen><h1>Este usuario es de caja</h1><p className="muted">El panel es solo para el administrador del restaurante.</p>
+      <Screen><h1>Este usuario es de caja</h1><p className="muted">El panel es solo para el administrador del establecimiento.</p>
         <Link className="btn dark" to="/caja">Ir a la caja</Link><button className="link" onClick={logout}>Entrar con otro usuario</button></Screen>
     );
   }
@@ -37,7 +37,7 @@ function Dashboard({ session, onLogout }) {
   const [toastNode, toast] = useToast();
   return (
     <>
-    <AppBar title={session.restaurant.name} subtitle="Panel del restaurante">
+    <AppBar title={session.restaurant.name} subtitle="Panel del establecimiento">
       <nav className="tabs" role="tablist">
         {TABS.map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{l}</button>)}
       </nav>
@@ -239,7 +239,7 @@ function Config({ toast }) {
   return (
     <form className="panel" onSubmit={save} style={{ maxWidth: 640 }}>
       <h2>Reglas del Club</h2>
-      {field('name', 'Nombre del restaurante')}
+      {field('name', 'Nombre del establecimiento')}
       <div className="pair">
         {field('pointsPerThousand', 'Puntos por cada $1.000', { type: 'number', min: 0, max: 100 })}
         {field('stampsGoal', 'Sellos para el premio', { type: 'number', min: 2, max: 20 })}

@@ -45,7 +45,7 @@ export default function Login({ title, onLogin, allowSignup = false }) {
       </form>
       {allowSignup && (
         <div className="stack">
-          <p className="muted" style={{ textAlign: 'center', margin: 0 }}>¿Tu restaurante aún no está en Fácil?</p>
+          <p className="muted" style={{ textAlign: 'center', margin: 0 }}>¿Tu establecimiento aún no está en Fácil?</p>
           <a className="btn ghost" href="/registro">Crear cuenta</a>
         </div>
       )}
